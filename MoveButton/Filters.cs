@@ -44,10 +44,124 @@ namespace MoveButton
         protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
         {
             Color sourcecolor = sourceImage.GetPixel(x, y);
-            Color resultcolor = Color.FromArgb(255 - sourcecolor.R, 
-                                                255 - sourcecolor.G, 
+            Color resultcolor = Color.FromArgb(255 - sourcecolor.R,
+                                                255 - sourcecolor.G,
                                                 255 - sourcecolor.B);
             return resultcolor;
+        }
+    }
+
+    class MatrixFilter : Filters
+    {
+        protected float[,] kernel = null;
+        protected MatrixFilter() { }
+        public MatrixFilter(float[,] kernel)
+        {
+            this.kernel = kernel;
+        }
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            int radiusX = kernel.GetLength(0) / 2;
+            int radiusY = kernel.GetLength(1) / 2;
+
+            float resultR = 0;
+            float resultG = 0;
+            float resultB = 0;
+            for (int l = -radiusY; l <= radiusY; l++)
+            {
+                for (int k = -radiusX; k <= radiusX; k++)
+                {
+                    int idX = Clamp(x + k, 0, sourceImage.Width - 1);
+                    int idY = Clamp(y + l, 0, sourceImage.Height - 1);
+                    Color neighborColor = sourceImage.GetPixel(idX, idY);
+                    resultR += neighborColor.R * kernel[k + radiusX, l + radiusY];
+                    resultG += neighborColor.G * kernel[k + radiusX, l + radiusY];
+                    resultB += neighborColor.B * kernel[k + radiusX, l + radiusY];
+                }
+            }
+            return Color.FromArgb(
+                Clamp((int)resultR, 0, 255),
+                Clamp((int)resultG, 0, 255),
+                Clamp((int)resultB, 0, 255));
+        }
+    }
+
+    class BlurFilter : MatrixFilter
+    {
+        public BlurFilter()
+        {
+            int sizeX = 3;
+            int sizeY = 3;
+            kernel = new float[sizeX, sizeY];
+            for (int i = 0; i < sizeX; i++)
+            {
+                for (int j = 0; j < sizeY; j++)
+                {
+                    kernel[i, j] = 1.0f / (float)(sizeX * sizeY);
+                }
+            }
+        }
+    }
+
+    class GaussianFilter : MatrixFilter
+    {
+        public GaussianFilter()
+        {
+            createGaussianFilter(3, 2);
+        }
+        public void createGaussianFilter(int radius, float sigma)
+        {
+            int size = 2 * radius + 1;
+            kernel = new float[size, size];
+            float norm = 0;
+            for (int i = -radius; i <= radius; i++)
+
+                for (int j = -radius; j <= radius; j++)
+                {
+                    kernel[i + radius, j + radius] = (float)(Math.Exp(i * i + j * j) / (sigma * sigma));
+                    norm += kernel[i + radius, j + radius];
+                }
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    kernel[i, j] /= norm;
+                }
+            }
+        }
+    }
+
+    class GrayScaleFilter : Filters
+    {
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            Color sourcecolor = sourceImage.GetPixel(x, y);
+            float Intensity = (float)(0.36 * sourcecolor.R) + (float)(0.53 * sourcecolor.G) + (float)(0.11 * sourcecolor.B);
+            Color resultcolor = Color.FromArgb((int)Intensity, (int)Intensity, (int)Intensity);
+            return resultcolor;
+        }
+    }
+
+    class Scepiah : Filters
+    {
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            Color sourcecolor = sourceImage.GetPixel(x, y);
+            float Intensity = (float)(0.36 * sourcecolor.R) + (float)(0.53 * sourcecolor.G) + (float)(0.11 * sourcecolor.B);
+            float k = (float)3.2;
+            Color resultcolor = Color.FromArgb(
+                Clamp((int)(resultR, 0, 255),
+                Clamp((int)resultG, 0, 255),
+                Clamp((int)resultB, 0, 255));
+            return resultcolor;
+        }
+        public int Clamp(int value, int min, int max)
+        {
+            if (value < min)
+                return min;
+            if (value > max)
+                return max;
+            return value;
         }
     }
 }
