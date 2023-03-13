@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Security.Policy;
 
 namespace MoveButton
 {
@@ -148,11 +149,11 @@ namespace MoveButton
         {
             Color sourcecolor = sourceImage.GetPixel(x, y);
             float Intensity = (float)(0.36 * sourcecolor.R) + (float)(0.53 * sourcecolor.G) + (float)(0.11 * sourcecolor.B);
-            float k = (float)3.2;
-            Color resultcolor = Color.FromArgb(
-                Clamp((int)(resultR, 0, 255),
-                Clamp((int)resultG, 0, 255),
-                Clamp((int)resultB, 0, 255));
+            double k = 15;
+            int Red = (int)((int)Intensity + 2 * k);
+            int Green = (int)((int)Intensity + 0.5 * k);
+            int Blue = (int)((int)Intensity - 1 * k);
+            Color resultcolor = Color.FromArgb(Clamp(Red, 0, 255), Clamp(Green, 0, 255), Clamp(Blue, 0, 255));
             return resultcolor;
         }
         public int Clamp(int value, int min, int max)
@@ -163,5 +164,106 @@ namespace MoveButton
                 return max;
             return value;
         }
+    }
+
+    class Bright : Filters
+    {
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            int k = 100;
+            Color sourcecolor = sourceImage.GetPixel(x, y);
+            Color resultcolor = Color.FromArgb(Clamp(sourcecolor.R + k, 0, 255),
+                Clamp(sourcecolor.G + k, 0, 255),
+                Clamp(sourcecolor.B + k, 0, 255));
+            return resultcolor;
+        }
+        public int Clamp(int value, int min, int max)
+        {
+            if (value < min)
+                return min;
+            if (value > max)
+                return max;
+            return value;
+        }
+    }
+
+    class SobelFilter : MatrixFilter
+    {
+        public SobelFilter()
+        {
+            createSobelFilter(3);
+        }
+        public void createSobelFilter(int radius)
+        {
+            int size = radius;
+            kernel = new float[size, size];
+            for (int i = 0; i < radius; i++)
+                for (int j = 0; j < radius; j++)
+                {
+                    kernel[i, j] = 0;
+                }
+            kernel[0, 0] = -1;
+            kernel[1, 0] = -2;
+            kernel[2, 0] = -1;
+            kernel[0, 2] = 1;
+            kernel[1, 2] = 2;
+            kernel[2, 2] = 1;
+            
+        }
+    }
+
+    class SharpnessFilter : MatrixFilter 
+    {
+        public SharpnessFilter()
+        {
+            createSharpnessFilter(3);
+        }
+        public void createSharpnessFilter(int radius)
+        {
+            int size = radius;
+            kernel = new float[size, size];
+            for (int i = 0; i < radius; i++)
+                for (int j = 0; j < radius; j++)
+                {
+                    kernel[i, j] = 0;
+                }
+            kernel[0, 0] = 0;
+            kernel[1, 0] = -1;
+            kernel[2, 0] = 0;
+            kernel[0, 1] = -1;
+            kernel[1, 1] = 5;
+            kernel[2, 1] = -1;
+            kernel[0, 2] = 0;
+            kernel[1, 2] = -1;
+            kernel[2, 2] = 0;
+        }
+    }
+
+    class EmbossingFilter : MatrixFilter
+    {
+        public EmbossingFilter()
+        {
+            createEmbossingFilter(3);
+        }
+        public void createEmbossingFilter(int radius)
+        {
+            int size = radius;
+            kernel = new float[size, size];
+            for (int i = 0; i < radius; i++)
+                for (int j = 0; j < radius; j++)
+                {
+                    kernel[i, j] = 0;
+                }
+            kernel[0, 0] = 0;
+            kernel[1, 0] = 1;
+            kernel[2, 0] = 0;
+            kernel[0, 1] = 1;
+            kernel[1, 1] = 0;
+            kernel[2, 1] = -1;
+            kernel[0, 2] = 0;
+            kernel[1, 2] = -1;
+            kernel[2, 2] = 0;
+        }
+       // доделать
     }
 }
