@@ -7,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Security.Policy;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace MoveButton
 {
@@ -247,13 +250,9 @@ namespace MoveButton
         }
         public void createEmbossingFilter(int radius)
         {
-            int size = radius;
-            kernel = new float[size, size];
-            for (int i = 0; i < radius; i++)
-                for (int j = 0; j < radius; j++)
-                {
-                    kernel[i, j] = 0;
-                }
+            int sizeX = radius;
+            int sizeY = radius;
+            kernel = new float[sizeX, sizeY];
             kernel[0, 0] = 0;
             kernel[1, 0] = 1;
             kernel[2, 0] = 0;
@@ -264,6 +263,165 @@ namespace MoveButton
             kernel[1, 2] = -1;
             kernel[2, 2] = 0;
         }
-       // доделать
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            float resR = 0;
+            float resG = 0;
+            float resB = 0;
+            int radiusX = kernel.GetLength(0) / 2;
+            int radiusY = kernel.GetLength(1) / 2;
+            int i = 100;
+            for(int j = -radiusY; j <= radiusY; j++)
+            {
+                for(int k = -radiusX; k <= radiusX; k++)
+                {
+                    int idX = Clamp(x + k, 0, sourceImage.Width - 1);
+                    int idY = Clamp(y + j, 0, sourceImage.Height - 1);
+                    Color neighborcolor = sourceImage.GetPixel(idX, idY);
+                    resR += neighborcolor.R * kernel[k + radiusX, j + radiusY];
+                    resG += neighborcolor.R * kernel[k + radiusX, j + radiusY];
+                    resB += neighborcolor.R * kernel[k + radiusX, j + radiusY];
+                }
+            }
+            Color resultColor = Color.FromArgb(Clamp((int)resR + i, 0, 255), Clamp((int)resG + i, 0, 255), Clamp((int)resB + i, 0, 255));
+            return resultColor;
+        }
+        public int Clamp(int value, int min, int max)
+        {
+            if (value < min)
+                return min;
+            if (value > max)
+                return max;
+            return value;
+        }
+    }
+
+    class MotionBlurFilter : MatrixFilter
+    {
+        public MotionBlurFilter()
+        {
+            createMotionBlurFilter(5);
+        }
+        public void createMotionBlurFilter(int size)
+        {
+            kernel = new float[size, size];
+            for(int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    if(i == j)
+                    {
+                        kernel[i, j] = 1.0f * (1.0f / (float)size);
+                    }
+                    else
+                    {
+                        kernel[i, j] = 0.0f;
+                    }
+                }
+            }
+        }
+    }
+
+    class MedianFilter
+    {
+        
+        public Bitmap processImage(Bitmap sourceImage)
+        {
+            int matrixSize = 3;
+            BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height),
+                                                     ImageLockMode.ReadOnly,
+                                                     PixelFormat.Format32bppArgb);
+
+            byte[] pixelBuffer = new byte[sourceData.Stride *
+                                  sourceData.Height];
+
+
+            byte[] resultBuffer = new byte[sourceData.Stride *
+                                           sourceData.Height];
+
+
+            Marshal.Copy(sourceData.Scan0, pixelBuffer, 0,
+                                       pixelBuffer.Length);
+
+
+            sourceImage.UnlockBits(sourceData);
+
+            int filterOffset = (matrixSize - 1) / 2;
+            int calcOffset = 0;
+
+
+            int byteOffset = 0;
+
+            List<int> neighbourPixels = new List<int>();
+            byte[] middlePixel;
+
+
+            for (int offsetY = filterOffset; offsetY <
+                sourceImage.Height - filterOffset; offsetY++)
+            {
+                for (int offsetX = filterOffset; offsetX <
+                    sourceImage.Width - filterOffset; offsetX++)
+                {
+                    byteOffset = offsetY *
+                                 sourceData.Stride +
+                                 offsetX * 4;
+
+
+                    neighbourPixels.Clear();
+
+
+                    for (int filterY = -filterOffset;
+                        filterY <= filterOffset; filterY++)
+                    {
+                        for (int filterX = -filterOffset;
+                            filterX <= filterOffset; filterX++)
+                        {
+
+
+                            calcOffset = byteOffset +
+                                         (filterX * 4) +
+                                (filterY * sourceData.Stride);
+
+
+                            neighbourPixels.Add(BitConverter.ToInt32(
+                                             pixelBuffer, calcOffset));
+                        }
+                    }
+
+
+                    neighbourPixels.Sort();
+
+                    middlePixel = BitConverter.GetBytes(
+                                       neighbourPixels[filterOffset]);
+
+
+                    resultBuffer[byteOffset] = middlePixel[0];
+                    resultBuffer[byteOffset + 1] = middlePixel[1];
+                    resultBuffer[byteOffset + 2] = middlePixel[2];
+                    resultBuffer[byteOffset + 3] = middlePixel[3];
+                }
+            }
+
+
+            Bitmap resultBitmap = new Bitmap(sourceImage.Width,
+                                             sourceImage.Height);
+
+
+            BitmapData resultData =
+                       resultBitmap.LockBits(new Rectangle(0, 0,
+                       resultBitmap.Width, resultBitmap.Height),
+                       ImageLockMode.WriteOnly,
+                       PixelFormat.Format32bppArgb);
+
+
+            Marshal.Copy(resultBuffer, 0, resultData.Scan0,
+                                       resultBuffer.Length);
+
+
+            resultBitmap.UnlockBits(resultData);
+
+
+            return resultBitmap;
+        }
     }
 }

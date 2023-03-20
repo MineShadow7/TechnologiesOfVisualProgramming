@@ -150,5 +150,19 @@ namespace MoveButton
             Filters filter = new EmbossingFilter();
             backgroundWorker1.RunWorkerAsync(filter);
         }
+
+        private void размытиеДвиженияToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Filters filter = new MotionBlurFilter();
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
+
+        private void медианныйToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MedianFilter filter = new MedianFilter();
+            Bitmap resultImage = filter.processImage(image);
+            pictureBox1.Image = resultImage;
+            pictureBox1.Refresh();
+        }
     }
 }
