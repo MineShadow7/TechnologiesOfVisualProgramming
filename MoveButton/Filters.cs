@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel;
-using System.Security.Policy;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace MoveButton
 {
@@ -424,4 +419,29 @@ namespace MoveButton
             return resultBitmap;
         }
     }
+
+    class BorderSelectFilter : MatrixFilter
+    {
+        public BorderSelectFilter()
+        {
+            CreaterBorderSelectFilter();
+        }
+
+        public void CreaterBorderSelectFilter()
+        {
+            int size = 3;
+            kernel = new float[size, size];
+            kernel[0, 0] = 3;
+            kernel[1, 0] = 10;
+            kernel[2, 0] = 3;
+            kernel[0, 1] = 0;
+            kernel[1, 1] = 0;
+            kernel[2, 1] = 0;
+            kernel[0, 2] = -3;
+            kernel[1, 2] = -10;
+            kernel[2, 2] = -3;
+        }
+    }
+
+   
 }

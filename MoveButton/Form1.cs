@@ -164,5 +164,20 @@ namespace MoveButton
             pictureBox1.Image = resultImage;
             pictureBox1.Refresh();
         }
+
+        private void выделениеГраницToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Filters filter = new BorderSelectFilter();
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
+
+        private void яркиеГраницыToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MedianFilter medfilter = new MedianFilter();
+            image = medfilter.processImage(image);
+            Filters borderfilter = new BorderSelectFilter();
+            backgroundWorker1.RunWorkerAsync(borderfilter);
+            
+        }
     }
 }
