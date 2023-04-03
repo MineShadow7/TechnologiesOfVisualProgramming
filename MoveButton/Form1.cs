@@ -179,5 +179,23 @@ namespace MoveButton
             backgroundWorker1.RunWorkerAsync(borderfilter);
             
         }
+
+        private void волныToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            WavesFilterHorizontal filter = new WavesFilterHorizontal();
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
+
+        private void стеклоToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GlassFilter filter = new GlassFilter();
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
+
+        private void волныВертToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            WavesFilterVertical wavesFilterVertical = new WavesFilterVertical();
+            backgroundWorker1.RunWorkerAsync(wavesFilterVertical);
+        }
     }
 }

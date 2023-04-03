@@ -422,26 +422,102 @@ namespace MoveButton
 
     class BorderSelectFilter : MatrixFilter
     {
+        protected float[,] kernelX = null;
+        protected float[,] kernelY = null;
         public BorderSelectFilter()
         {
-            CreaterBorderSelectFilter();
+            int sizeX = 3;
+            int sizeY = 3;
+            kernelX = new float[sizeX, sizeY];
+            kernelY = new float[sizeX, sizeY];
+            kernelX[0, 0] = 3;
+            kernelX[0, 1] = 0;
+            kernelX[0, 2] = -3;
+            kernelX[1, 0] = 10;
+            kernelX[1, 1] = 0;
+            kernelX[1, 2] = -10;
+            kernelX[2, 0] = 3;
+            kernelX[2, 1] = 0;
+            kernelX[2, 2] = -3;
+
+            kernelY[0, 0] = 3;
+            kernelY[0, 1] = 10;
+            kernelY[0, 2] = 3;
+            kernelY[1, 0] = 0;
+            kernelY[1, 1] = 0;
+            kernelY[1, 2] = 0;
+            kernelY[2, 0] = -3;
+            kernelY[2, 1] = -10;
+            kernelY[2, 2] = -3;
         }
 
-        public void CreaterBorderSelectFilter()
+
+        protected Color calcXYcolors(Bitmap sourceImage, int x, int y, float[,] kernel)
         {
-            int size = 3;
-            kernel = new float[size, size];
-            kernel[0, 0] = 3;
-            kernel[1, 0] = 10;
-            kernel[2, 0] = 3;
-            kernel[0, 1] = 0;
-            kernel[1, 1] = 0;
-            kernel[2, 1] = 0;
-            kernel[0, 2] = -3;
-            kernel[1, 2] = -10;
-            kernel[2, 2] = -3;
+            int radiusX = (int)(kernel.GetLength(0) * 0.5);
+            int radiusY = (int)(kernel.GetLength(1) * 0.5);
+            float resultR = 0;
+            float resultG = 0;
+            float resultB = 0;
+            for (int l = -radiusY; l <= radiusY; l++)
+            {
+                for (int k = -radiusX; k <= radiusX; k++)
+                {
+                    int idX = Clamp(x + k, 0, sourceImage.Width - 1);
+                    int idY = Clamp(y + l, 0, sourceImage.Height - 1);
+                    Color neighborColor = sourceImage.GetPixel(idX, idY);
+                    resultR += neighborColor.R * kernel[k + radiusX, l + radiusY];
+                    resultG += neighborColor.G * kernel[k + radiusX, l + radiusY];
+                    resultB += neighborColor.B * kernel[k + radiusX, l + radiusY];
+                }
+            }
+            return Color.FromArgb(
+                Clamp((int)resultR, 0, 255),
+                Clamp((int)resultG, 0, 255),
+                Clamp((int)resultB, 0, 255));
+        }
+
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            Color xCol = calcXYcolors(sourceImage, x, y, kernelX);
+            Color yCol = calcXYcolors(sourceImage, x, y, kernelY);
+            Color cxy = Color.FromArgb(
+                Clamp((int)Math.Sqrt(xCol.R * xCol.R + yCol.R * yCol.R), 0, 255),
+                Clamp((int)Math.Sqrt(xCol.G * xCol.G + yCol.G * yCol.G), 0, 255),
+                Clamp((int)Math.Sqrt(xCol.B * xCol.B + yCol.B * yCol.B), 0, 255)
+            );
+            return cxy;
         }
     }
 
-   
+    class WavesFilterHorizontal : Filters
+    {
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            return sourceImage.GetPixel(Clamp((int)(x + (20 * Math.Sin((2 * Math.PI * y) / 60))), 0, sourceImage.Width - 1),
+                Clamp(y, 0, sourceImage.Height - 1));
+        }
+      
+    }
+
+    class WavesFilterVertical : Filters
+    {
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            return sourceImage.GetPixel(Clamp((int)(x + 20 * Math.Sin(2 * Math.PI * x / 30)), 0, sourceImage.Width - 1),
+                Clamp(y, 0, sourceImage.Height - 1));
+        }
+
+    }
+
+    class GlassFilter : Filters
+    {
+        Random random = new Random();
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            return sourceImage.GetPixel(Clamp((int)(x + ((random.NextDouble() - 0.5) * 10)), 0, sourceImage.Width - 1), 
+                Clamp((int)(y + ((random.NextDouble() - 0.5) * 10)), 0, sourceImage.Height - 1));
+        }
+    }
+
 }
