@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Linq;
+using System.Security.Policy;
 
 namespace MoveButton
 {
@@ -185,9 +186,83 @@ namespace MoveButton
         }
     }
 
-    class SobelFilter : MatrixFilter
+    class SobelFilterX : MatrixFilter
     {
-        public SobelFilter()
+        protected float[,] kernelX = null;
+        protected float[,] kernelY = null;
+        public SobelFilterX()
+        {
+            createSobelFilter(3);
+        }
+        public void createSobelFilter(int radius)
+        {
+            int size = radius;
+            kernelX = new float[size, size];
+            kernelY = new float[size, size];
+            for (int i = 0; i < radius; i++)
+                for (int j = 0; j < radius; j++)
+                {
+                    kernelX[i, j] = 0;
+                    kernelY[i, j] = 0;
+                }
+            kernelX[0, 0] = -1;
+            kernelX[1, 0] = -2;
+            kernelX[2, 0] = -1;
+            kernelX[0, 2] = 1;
+            kernelX[1, 2] = 2;
+            kernelX[2, 2] = 1;
+
+
+            kernelY[0, 0] = -1;
+            kernelY[0, 1] = -2;
+            kernelY[0, 2] = -1;
+            kernelY[2, 0] = 1;
+            kernelY[2, 1] = 2;
+            kernelY[2, 2] = 1;
+        }
+
+        protected Color calcXYcolors(Bitmap sourceImage, int x, int y, float[,] kernel)
+        {
+            int radiusX = (int)(kernel.GetLength(0) * 0.5);
+            int radiusY = (int)(kernel.GetLength(1) * 0.5);
+            float resultR = 0;
+            float resultG = 0;
+            float resultB = 0;
+            for (int l = -radiusY; l <= radiusY; l++)
+            {
+                for (int k = -radiusX; k <= radiusX; k++)
+                {
+                    int idX = Clamp(x + k, 0, sourceImage.Width - 1);
+                    int idY = Clamp(y + l, 0, sourceImage.Height - 1);
+                    Color neighborColor = sourceImage.GetPixel(idX, idY);
+                    resultR += neighborColor.R * kernel[k + radiusX, l + radiusY];
+                    resultG += neighborColor.G * kernel[k + radiusX, l + radiusY];
+                    resultB += neighborColor.B * kernel[k + radiusX, l + radiusY];
+                }
+            }
+            return Color.FromArgb(
+                Clamp((int)resultR, 0, 255),
+                Clamp((int)resultG, 0, 255),
+                Clamp((int)resultB, 0, 255));
+        }
+
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            Color xCol = calcXYcolors(sourceImage, x, y, kernelX);
+            Color yCol = calcXYcolors(sourceImage, x, y, kernelY);
+            Color cxy = Color.FromArgb(
+                Clamp((int)Math.Sqrt(xCol.R * xCol.R + yCol.R * yCol.R), 0, 255),
+                Clamp((int)Math.Sqrt(xCol.G * xCol.G + yCol.G * yCol.G), 0, 255),
+                Clamp((int)Math.Sqrt(xCol.B * xCol.B + yCol.B * yCol.B), 0, 255)
+            );
+            return cxy;
+        }
+    }
+
+    class SobelFilterY : MatrixFilter
+    {
+        
+        public SobelFilterY()
         {
             createSobelFilter(3);
         }
@@ -195,19 +270,18 @@ namespace MoveButton
         {
             int size = radius;
             kernel = new float[size, size];
-            for (int i = 0; i < radius; i++)
-                for (int j = 0; j < radius; j++)
-                {
-                    kernel[i, j] = 0;
-                }
             kernel[0, 0] = -1;
-            kernel[1, 0] = -2;
-            kernel[2, 0] = -1;
-            kernel[0, 2] = 1;
-            kernel[1, 2] = 2;
+            kernel[0, 1] = -2;
+            kernel[0, 2] = -1;
+            kernel[1, 0] = 0;
+            kernel[2, 1] = 0;
+            kernel[1, 2] = 0;
+            kernel[2, 0] = 1;
+            kernel[2, 1] = 2;
             kernel[2, 2] = 1;
-            
         }
+
+        
     }
 
     class SharpnessFilter : MatrixFilter 

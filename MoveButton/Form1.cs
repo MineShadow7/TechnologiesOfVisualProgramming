@@ -135,7 +135,7 @@ namespace MoveButton
 
         private void фильтрСобеляToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Filters filter = new SobelFilter();
+            Filters filter = new SobelFilterX();
             backgroundWorker1.RunWorkerAsync(filter);
         }
 
@@ -196,6 +196,12 @@ namespace MoveButton
         {
             WavesFilterVertical wavesFilterVertical = new WavesFilterVertical();
             backgroundWorker1.RunWorkerAsync(wavesFilterVertical);
+        }
+
+        private void фильтрСобеляПоYToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SobelFilterY sobelFilterY = new SobelFilterY();
+            backgroundWorker1.RunWorkerAsync(sobelFilterY);
         }
     }
 }
