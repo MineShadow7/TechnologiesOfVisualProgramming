@@ -16,7 +16,7 @@ namespace MoveButton
             Bitmap resultImage = new Bitmap(sourceImage.Width, sourceImage.Height);
             for (int i = 0; i < sourceImage.Width; i++)
             {
-                worker.ReportProgress((int)(float)i / resultImage.Width * 100);
+                worker.ReportProgress((int)((float)i / resultImage.Width * 100));
                 if (worker.CancellationPending)
                     return null;
                 for (int j = 0; j < sourceImage.Height; j++)
@@ -568,9 +568,7 @@ namespace MoveButton
     {
         protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
         {
-            return sourceImage.GetPixel(
-                Clamp((int)(x + (20 * Math.Sin((2 * Math.PI * y) / 60))), 0, sourceImage.Width - 1),
-                Clamp(y, 0, sourceImage.Height - 1));
+            return sourceImage.GetPixel((int)(x + (20 * Math.Sin((2 * Math.PI * y) / 60))), y);
         }
       
     }
@@ -579,9 +577,7 @@ namespace MoveButton
     {
         protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
         {
-            return sourceImage.GetPixel(
-                Clamp((int)(x + 20 * Math.Sin(2 * Math.PI * x / 30)), 0, sourceImage.Width - 1),
-                Clamp(y, 0, sourceImage.Height - 1));
+            return sourceImage.GetPixel((int)(x + 20 * Math.Sin(2 * Math.PI * x / 30)), y);
         }
 
     }
